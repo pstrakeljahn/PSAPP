@@ -1,0 +1,7 @@
+{
+  "name": "PSAPP",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}
