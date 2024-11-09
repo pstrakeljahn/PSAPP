@@ -18,17 +18,21 @@ export interface User {
   providedIn: 'root',
 })
 export class UserService {
-  private user: User;
+  private _user: User = null;
 
   constructor(private restAdapter: RestAdapterService) {}
+
+  public get user(): User {
+    return this._user;
+  }
 
   public getUser(): Observable<User> {
     return this.restAdapter.get('core/getUser').pipe(
       map((res) => {
-        this.user = res.data as unknown as User;
+        this._user = res.data as unknown as User;
       }),
       switchMap(() => {
-        return of(this.user);
+        return of(this._user);
       })
     );
   }

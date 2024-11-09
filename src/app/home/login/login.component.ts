@@ -1,11 +1,6 @@
 import { Component } from '@angular/core';
-import { map, of, switchMap, tap } from 'rxjs';
-import {
-  ConfigServer,
-  ConfigService,
-} from 'src/app/core/services/config.service';
+import { Router } from '@angular/router';
 import { LoginService } from 'src/app/core/services/login.service';
-import { User, UserService } from 'src/app/core/services/user.service';
 
 @Component({
   selector: 'app-login',
@@ -16,36 +11,15 @@ export class LoginComponent {
   public username: string = null;
   public password: string = null;
   public response: any = null;
+  public isloggedIn: any;
 
-  constructor(
-    private loginService: LoginService,
-    private configService: ConfigService,
-    private userService: UserService
-  ) {}
+  constructor(public loginService: LoginService, private router: Router) {}
 
   login() {
     if (this.username && this.password) {
-      this.loginService
-        .login(this.username, this.password)
-        .pipe(
-          switchMap((success: boolean) => {
-            if (success) {
-              return this.userService.getUser();
-            } else {
-              return of([]);
-            }
-          }),
-          tap((user) => {
-            this.response = user;
-          }),
-          switchMap(() => {
-            return this.configService.loadServerConfig();
-          }),
-          tap((config) => {
-            this.response = { ...config, ...this.response };
-          })
-        )
-        .subscribe();
+      this.loginService.login(this.username, this.password).subscribe((res) => {
+        this.router.navigate(['/home']);
+      });
     }
   }
 }

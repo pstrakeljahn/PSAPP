@@ -6,26 +6,49 @@ import {
 } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { MetaWrapper, RestAdapterService } from './rest-adapter.service';
-import { catchError, map, Observable, of, tap } from 'rxjs';
+import {
+  BehaviorSubject,
+  catchError,
+  forkJoin,
+  map,
+  Observable,
+  of,
+  switchMap,
+} from 'rxjs';
 import { AuthInterceptor } from '../interceptors/auth.service';
+import { Config, ConfigService } from './config.service';
+import { User, UserService } from './user.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class LoginService {
-  private user: Record<string, unknown> = null;
-
-  get loggedIn(): boolean {
-    return this.user !== null;
-  }
+  public isLoggedIn: BehaviorSubject<boolean> = new BehaviorSubject(false);
 
   constructor(
     private http: HttpClient,
     private restAdapter: RestAdapterService,
-    private interceptor: AuthInterceptor
+    private interceptor: AuthInterceptor,
+    private configService: ConfigService,
+    private userService: UserService
   ) {}
 
-  public login(username: string, password: string): Observable<boolean> {
+  public login(username: string, password: string): Observable<User & Config> {
+    return this.loginRequest(username, password).pipe(
+      switchMap((success: boolean) => {
+        return forkJoin({
+          user: success ? this.userService.getUser() : of([]),
+          config: success ? this.configService.loadServerConfig() : of([]),
+        });
+      }),
+      map((res) => {
+        this.isLoggedIn.next(true);
+        return { ...res.user, ...res.config } as User & Config;
+      })
+    );
+  }
+
+  public loginRequest(username: string, password: string): Observable<boolean> {
     return this.http
       .post<MetaWrapper<Record<string, unknown>>>(
         this.restAdapter.url + 'login',
@@ -53,6 +76,6 @@ export class LoginService {
   }
 
   private logout() {
-    this.user = null;
+    this.isLoggedIn.next(false);
   }
 }
