@@ -1,0 +1,4 @@
+{
+    "backend": "http://localhost/PSORM/api/",
+    "apiVersion": "1"
+}
