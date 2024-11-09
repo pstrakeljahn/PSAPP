@@ -18,6 +18,7 @@ import {
 import { AuthInterceptor } from '../interceptors/auth.service';
 import { Config, ConfigService } from './config.service';
 import { User, UserService } from './user.service';
+import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root',
@@ -30,8 +31,28 @@ export class LoginService {
     private restAdapter: RestAdapterService,
     private interceptor: AuthInterceptor,
     private configService: ConfigService,
-    private userService: UserService
+    private userService: UserService,
+    private router: Router
   ) {}
+
+  public checkExistingToken() {
+    const token: string = localStorage.getItem('authToken');
+    if (token) {
+      forkJoin({
+        user: this.userService.getUser(),
+        config: this.configService.loadServerConfig(),
+      })
+        .pipe(
+          map((res) => {
+            this.isLoggedIn.next(true);
+            return { ...res.user, ...res.config } as User & Config;
+          })
+        )
+        .subscribe(() => {
+          this.router.navigate(['/home']);
+        });
+    }
+  }
 
   public login(username: string, password: string): Observable<User & Config> {
     return this.loginRequest(username, password).pipe(
@@ -75,7 +96,9 @@ export class LoginService {
     return of(false);
   }
 
-  private logout() {
+  public logout() {
+    localStorage.removeItem('authToken');
+    this.router.navigate(['/home/login']);
     this.isLoggedIn.next(false);
   }
 }

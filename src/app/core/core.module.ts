@@ -11,6 +11,10 @@ export function initConfig(configService: ConfigService) {
   return () => configService.init();
 }
 
+export function checkExistingToken(loginService: LoginService) {
+  return () => loginService.checkExistingToken();
+}
+
 @NgModule({
   providers: [
     {
@@ -20,7 +24,12 @@ export function initConfig(configService: ConfigService) {
     },
     AuthInterceptor,
     RestAdapterService,
-    LoginService,
+    {
+      provide: APP_INITIALIZER,
+      useFactory: checkExistingToken,
+      deps: [LoginService],
+      multi: true,
+    },
     UserService,
     {
       provide: APP_INITIALIZER,
